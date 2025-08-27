@@ -14,8 +14,11 @@ A TypeScript application that analyzes swap events from PostHog to calculate tot
 
 ## 📊 Current Results
 
-- **Total Swaps**: 2,950+ events processed
-- **Total Volume**: $684,290+ USD calculated
+- **All-Time**: 2,951+ swaps, $683,997+ USD volume
+- **Last 24h**: 121 swaps, $24,412 USD volume (-44.24% swaps, -40.08% volume vs previous day)
+- **Previous 24h**: 217 swaps, $40,738 USD volume
+- **Last 7d**: 1,081 swaps, $152,778 USD volume  
+- **Last 30d**: 2,712 swaps, $569,813 USD volume
 - **Token Coverage**: 100% (all tokens mapped and priced)
 - **Processing Speed**: ~3 seconds for full analysis
 
@@ -104,8 +107,28 @@ The application handles multiple token ID formats:
 ```json
 {
   "sideValued": "in",
-  "totalSwaps": 2950,
-  "totalVolumeUSD": 684290.326785399,
+  "allTime": {
+    "totalSwaps": 2951,
+    "totalVolumeUSD": 683997.460131663
+  },
+  "last24h": {
+    "totalSwaps": 121,
+    "totalVolumeUSD": 24411.73271967872,
+    "swapGrowthPercent": -44.24,
+    "volumeGrowthPercent": -40.08
+  },
+  "previous24h": {
+    "totalSwaps": 217,
+    "totalVolumeUSD": 40738.48889244697
+  },
+  "last7d": {
+    "totalSwaps": 1081,
+    "totalVolumeUSD": 152777.93104626966
+  },
+  "last30d": {
+    "totalSwaps": 2712,
+    "totalVolumeUSD": 569813.4399897703
+  },
   "notes": {
     "unmappedIntentTokenIds": [],
     "priceIdMissing": [],
@@ -117,7 +140,14 @@ The application handles multiple token ID formats:
 ### Output Fields
 
 - **`sideValued`**: Which leg was valued (`in` or `out`)
-- **`totalSwaps`**: Total number of swap events processed
+- **`allTime`**: Complete historical metrics
+- **`last24h`**: Activity in the last 24 hours with growth metrics
+  - **`swapGrowthPercent`**: Day-over-day change in transaction count (%)
+  - **`volumeGrowthPercent`**: Day-over-day change in volume (%)
+- **`previous24h`**: Activity 24-48 hours ago (for growth comparison)
+- **`last7d`**: Activity in the last 7 days  
+- **`last30d`**: Activity in the last 30 days
+- **`totalSwaps`**: Number of swap events in time period
 - **`totalVolumeUSD`**: Total volume in USD (high precision)
 - **`unmappedIntentTokenIds`**: Token IDs without mapping (should be empty)
 - **`priceIdMissing`**: Mapped tokens without price data
