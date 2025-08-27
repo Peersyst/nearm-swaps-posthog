@@ -15,6 +15,15 @@ type TimeBasedMetrics = {
   volumeUSD: Decimal;
 };
 
+type PairMetrics = {
+  swaps: number;
+  volumeUSD: Decimal;
+  last24h: {
+    swaps: number;
+    volumeUSD: Decimal;
+  };
+};
+
 async function main() {
   // 1) Get prices ONCE
   const prices = await fetchPricesOnce(); // id -> Decimal price
@@ -42,7 +51,26 @@ async function main() {
     last30d: { swaps: 0, volumeUSD: new Decimal(0) }
   };
 
-  // 4) Iterate events one-by-one oldest→newest
+  // 4) Initialize trading pair tracking
+  const tradingPairs = new Map<string, PairMetrics>();
+
+  // Helper function to get/create pair metrics
+  const getPairMetrics = (tokenA: string, tokenB: string): PairMetrics => {
+    const pairKey = `${tokenA} → ${tokenB}`;
+    if (!tradingPairs.has(pairKey)) {
+      tradingPairs.set(pairKey, {
+        swaps: 0,
+        volumeUSD: new Decimal(0),
+        last24h: {
+          swaps: 0,
+          volumeUSD: new Decimal(0)
+        }
+      });
+    }
+    return tradingPairs.get(pairKey)!;
+  };
+
+  // 5) Iterate events one-by-one oldest→newest
   let offset = 0;
   const limit = cfg.BATCH_SIZE;
 
@@ -61,8 +89,13 @@ async function main() {
       const amountStr = (useIn ? ev.amount_in : ev.amount_out) ?? '0';
       const tokenId   = (useIn ? ev.token_in_id : ev.token_out_id) ?? '';
 
+      // Get both token IDs for pair tracking
+      const tokenInId = ev.token_in_id ?? '';
+      const tokenOutId = ev.token_out_id ?? '';
+
       // Parse event timestamp
       const eventTime = new Date(ev.timestamp).getTime();
+      const isLast24h = eventTime >= timeFrames['24h'];
       
       let amount: Decimal;
       try { amount = new Decimal(amountStr); }
@@ -104,6 +137,18 @@ async function main() {
         metrics.previous24h.volumeUSD = metrics.previous24h.volumeUSD.plus(volumeContribution);
       }
 
+      // Track trading pairs (A → B)
+      if (tokenInId && tokenOutId) {
+        const pairMetrics = getPairMetrics(tokenInId, tokenOutId);
+        pairMetrics.swaps++;
+        pairMetrics.volumeUSD = pairMetrics.volumeUSD.plus(volumeContribution);
+        
+        if (isLast24h) {
+          pairMetrics.last24h.swaps++;
+          pairMetrics.last24h.volumeUSD = pairMetrics.last24h.volumeUSD.plus(volumeContribution);
+        }
+      }
+
       processed++;
     }
 
@@ -123,7 +168,31 @@ async function main() {
     metrics.previous24h.volumeUSD.toNumber()
   );
 
-  // 6) Output with time-based metrics and growth
+  // 6) Process trading pairs for output
+  const topPairsAllTime = Array.from(tradingPairs.entries())
+    .map(([pair, metrics]) => ({
+      pair,
+      totalSwaps: metrics.swaps,
+      totalVolumeUSD: metrics.volumeUSD.toNumber(),
+      last24hSwaps: metrics.last24h.swaps,
+      last24hVolumeUSD: metrics.last24h.volumeUSD.toNumber()
+    }))
+    .sort((a, b) => b.totalVolumeUSD - a.totalVolumeUSD)
+    .slice(0, 10); // Top 10 pairs by volume
+
+  const topPairs24h = Array.from(tradingPairs.entries())
+    .map(([pair, metrics]) => ({
+      pair,
+      totalSwaps: metrics.swaps,
+      totalVolumeUSD: metrics.volumeUSD.toNumber(),
+      last24hSwaps: metrics.last24h.swaps,
+      last24hVolumeUSD: metrics.last24h.volumeUSD.toNumber()
+    }))
+    .filter(p => p.last24hSwaps > 0)
+    .sort((a, b) => b.last24hVolumeUSD - a.last24hVolumeUSD)
+    .slice(0, 10); // Top 10 pairs by 24h volume
+
+  // 7) Output with time-based metrics and growth
   const out = {
     sideValued: cfg.VOLUME_SIDE,
     
@@ -155,6 +224,12 @@ async function main() {
     last30d: {
       totalSwaps: metrics.last30d.swaps,
       totalVolumeUSD: metrics.last30d.volumeUSD.toNumber()
+    },
+    
+    // Trading pair analytics
+    topTradingPairs: {
+      allTime: topPairsAllTime,
+      last24h: topPairs24h
     },
     
     // Diagnostics

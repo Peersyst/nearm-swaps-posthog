@@ -10,15 +10,18 @@ A TypeScript application that analyzes swap events from PostHog to calculate tot
 - **High precision**: Uses Decimal.js for accurate financial calculations
 - **Flexible configuration**: Supports volume calculation on either `amount_in` or `amount_out`
 - **Account filtering**: Exclude test/internal accounts from calculations
+- **Trading pair analytics**: Track top Token A → Token B conversions with volume and count
 - **Comprehensive diagnostics**: Reports unmapped tokens, missing prices, and bad amounts
 
 ## 📊 Current Results
 
-- **All-Time**: 2,951+ swaps, $683,997+ USD volume
-- **Last 24h**: 121 swaps, $24,412 USD volume (-44.24% swaps, -40.08% volume vs previous day)
-- **Previous 24h**: 217 swaps, $40,738 USD volume
-- **Last 7d**: 1,081 swaps, $152,778 USD volume  
-- **Last 30d**: 2,712 swaps, $569,813 USD volume
+- **All-Time**: 2,951+ swaps, $684,166+ USD volume
+- **Last 24h**: 121 swaps, $24,463 USD volume (-43.72% swaps, -39.97% volume vs previous day)
+- **Previous 24h**: 215 swaps, $40,751 USD volume
+- **Last 7d**: 1,081 swaps, $152,872 USD volume  
+- **Last 30d**: 2,712 swaps, $569,981 USD volume
+- **Top Trading Pair**: Mystery Token → USDC ($215K volume, 66 swaps)
+- **Most Active Pair**: NEAR ↔ NEAR Native (1,136+ swaps combined)
 - **Token Coverage**: 100% (all tokens mapped and priced)
 - **Processing Speed**: ~3 seconds for full analysis
 
