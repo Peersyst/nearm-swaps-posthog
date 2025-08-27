@@ -11,6 +11,7 @@ A TypeScript application that analyzes swap events from PostHog to calculate tot
 - **Flexible configuration**: Supports volume calculation on either `amount_in` or `amount_out`
 - **Account filtering**: Exclude test/internal accounts from calculations
 - **Trading pair analytics**: Track top Token A → Token B conversions with volume and count
+- **Data quality monitoring**: Check data availability and identify gaps across date ranges
 - **Comprehensive diagnostics**: Reports unmapped tokens, missing prices, and bad amounts
 
 ## 📊 Current Results
@@ -43,6 +44,16 @@ A TypeScript application that analyzes swap events from PostHog to calculate tot
 3. **Run analysis**:
    ```bash
    npm run run
+   ```
+
+4. **Check data quality**:
+   ```bash
+   npm run check-data
+   ```
+
+5. **Debug events** (optional):
+   ```bash
+   npm run debug
    ```
 
 ## ⚙️ Configuration
@@ -89,6 +100,7 @@ EXCLUDE_ACCOUNT_IDS=test.near,bot.near
 - **`src/prices.ts`**: Price fetching from internal API + CoinGecko fallback
 - **`src/tokenMapping.ts`**: Token ID to price ID mapping system
 - **`src/config.ts`**: Environment configuration and validation
+- **`src/checkDataAvailability.ts`**: Data quality monitoring and gap detection
 
 ### Token Mapping System
 
@@ -156,14 +168,66 @@ The application handles multiple token ID formats:
 - **`priceIdMissing`**: Mapped tokens without price data
 - **`badAmounts`**: Events with unparseable amounts
 
+## 📊 Data Quality Monitoring
+
+The project includes a data availability checker that helps monitor data quality and identify gaps in your PostHog events.
+
+### Usage
+
+```bash
+npm run check-data
+```
+
+### Sample Output
+
+```
+🔍 Checking PostHog data availability...
+
+📊 Data Range Summary:
+   Earliest swap: 2025-07-18
+   Latest swap: 2025-08-27
+   Total events: 2,951
+
+📅 Daily Data Availability (40 days with data):
+
+✅ 2025-07-18: 1 swaps
+❌ 2025-07-19: No data
+✅ 2025-07-20: 2 swaps
+✅ 2025-07-21: 19 swaps
+...
+
+📋 Data Quality Summary:
+   Total days in range: 41
+   Days with data: 40
+   Days without data: 1
+   Data coverage: 97.6%
+   Longest gap: 1 consecutive days
+
+📈 Recent Activity (Last 7 Days):
+   Recent coverage: 7/7 days (100.0%)
+
+💡 Recommendations:
+   ✅ Excellent data coverage with minimal gaps.
+```
+
+### Features
+
+- **Date range analysis**: Identifies the full span of available data
+- **Daily breakdown**: Shows swap count for each day or marks missing days
+- **Gap detection**: Identifies periods without data and measures gap lengths
+- **Coverage metrics**: Calculates overall data coverage percentage
+- **Recent activity focus**: Special attention to the last 7 days of data
+- **Actionable recommendations**: Suggests next steps based on data quality
+
 ## 🛠️ Development
 
 ### Available Scripts
 
+- `npm start`: Execute main swap analysis
+- `npm run check-data`: Check data availability and identify gaps
+- `npm run debug`: Debug PostHog events and schema
 - `npm run dev`: Watch mode for development
-- `npm run run`: Execute analysis
 - `npm run build`: Compile TypeScript
-- `npm start`: Run compiled JavaScript
 
 ### Adding New Token Mappings
 
@@ -203,11 +267,20 @@ MAX_EVENTS=100  # Process only first 100 events
 
 ### Debug Mode
 
-Use the included `debug-events.js` to inspect PostHog data:
+Use the included debug script to inspect PostHog data:
 
 ```bash
-node debug-events.js
+npm run debug
 ```
+
+### Data Quality Issues
+
+If the data availability checker shows gaps:
+
+1. **Check PostHog ingestion**: Verify events are being sent correctly
+2. **Review date filters**: Ensure your event collection covers the expected period
+3. **Validate event naming**: Confirm `SWAP_EVENT_NAME` matches your actual events
+4. **Monitor ongoing**: Run `npm run check-data` regularly to catch new gaps
 
 ## 🤝 Contributing
 
